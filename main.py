@@ -1,0 +1,321 @@
+## better logging - multiple?
+## more testing
+## better comments
+
+import fitz
+import logging
+
+import yaml
+from yaml.loader import SafeLoader
+
+import smtplib
+import email.mime.multipart
+import email.mime.text
+import email.mime.base
+
+import os
+import time
+
+def main():
+    current_dir = os.getcwd()
+    working_dir = os.path.join(current_dir, 'Certificates')
+    config = get_config(current_dir, "config.yaml")
+
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        filename=os.path.join(current_dir, 'renamer.log'),
+                        filemode='a+')
+
+    sub_folders = ['EH', 'FWT', 'RR', 'KB']
+
+    for sub in sub_folders:
+        process_files(working_dir, config, sub)
+
+
+def process_files(working_dir, config, sub):
+    # Get file list for EH sub directory
+    files = scan_for_files(os.path.join(working_dir, sub))
+    timestamp = get_timestamp()
+    # Iterate through files
+    for file in files:
+        # Check if we have a pdf
+        if is_pdf(file):
+            file_type = get_file_type(file)
+            # Check we have a known certificate type
+            if file_type != None:
+                # Set working folder for EH
+                folder_path = os.path.join(working_dir, sub)
+
+                # Helper function to get text rects
+                #print(pdf_text_finder(os.path.join(folder_path, file)))
+
+                # Get needed data from the pdf
+                pdf_data = get_pdf_data(os.path.join(folder_path, file), file_type)
+                # Rename the pdf
+                file_new = rename_pdf_file(file, pdf_data[0], pdf_data[1], file_type, folder_path, pdf_data[3])
+                #[uprn, date, address, cert_num, job_no]
+                # Email pdf to needed addresses
+
+                if sub == "EH":
+                    if config['actions']['auto_email_EH'] == "YES":
+                        email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                        if config['actions']['auto_delete_on_send'] == "YES":
+                            delete_file(file_new)
+                        else:
+                            move_processed_file(working_dir, file_new, sub)
+                        logging.info("Email EH enabled")
+                    else:
+                        logging.info("Email EH disabled")
+                elif sub == "RR":
+                    if config['actions']['auto_email_RR'] == "YES":
+                        email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                        if config['actions']['auto_delete_on_send'] == "YES":
+                            delete_file(file_new)
+                        else:
+                            move_processed_file(working_dir, file_new, sub)
+                        logging.info("Email RR enabled")
+                    else:
+                        logging.info("Email RR disabled")
+                elif sub == "FWT":
+                    create_accuserv_list(working_dir, pdf_data[2], pdf_data[3], pdf_data[4], timestamp)
+                    if config['actions']['auto_email_FWT'] == "YES":
+                        email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                        if config['actions']['auto_delete_on_send'] == "YES":
+                            delete_file(file_new)
+                        else:
+                            move_processed_file(working_dir, file_new, sub)
+                        logging.info("Email FWT enabled")
+                    else:
+                        logging.info("Email FWT disabled")
+                elif sub == "KB":
+                    if config['actions']['auto_email_KB'] == "YES":
+                        email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                        if config['actions']['auto_delete_on_send'] == "YES":
+                            delete_file(file_new)
+                        else:
+                            move_processed_file(working_dir, file_new, sub)
+                        logging.info("Email KB enabled")
+                    else:
+                        logging.info("Email KB disabled")
+                else:
+                    pass
+            else:
+                pass
+        else:
+            pass
+
+
+def get_timestamp():
+    t = time.localtime()
+    timestamp = time.strftime('%b-%d-%Y_%H%M', t)
+    return timestamp
+
+
+# Create a file of accuserv details for processing
+def create_accuserv_list(working_dir, address, cert_no, job_no, timestamp):
+    # Create file
+    file = open(os.path.join(working_dir, 'accuserv' + '_' + timestamp + '.txt'), 'a+')
+    file.write(address + " : " + job_no + " : " + cert_no + '\r\n')
+    file.close()
+
+
+# Get list of files within supplied directory
+def scan_for_files(directory):
+    for path, subdirs, files in os.walk(directory):
+        return files
+
+
+def delete_file(file):
+    os.remove(file)
+
+
+def move_processed_file(working_dir, file, sub):
+    processed_dir = os.path.join(working_dir, '_PROCESSED\\'  + sub)
+    file_name = os.path.basename(file)
+    try:
+        os.rename(file, os.path.join(processed_dir, file_name))
+    except WindowsError as e:
+        delete_file(file)
+
+
+def get_file_type(file):
+    # Split path and file name
+    path, file_name = os.path.split(file)
+    # Check what type of certificate we have
+    if "EIC182C" in file_name:
+        return "EIC"
+    elif "EICR182C" in file_name:
+        return "EICR"
+    elif "MWC182C" in file_name:
+        return "MW"
+    elif "DVCR" in file_name:
+        return "VIS"
+    else:
+        pass
+
+
+# check that we have a pdf file
+def is_pdf(file):
+    split_file_name = os.path.splitext(file)
+    file_extension = split_file_name[1]
+    file_extension = file_extension.lower()
+    if file_extension == ".pdf":
+        return True
+    else:
+        return False
+
+
+# Pass in file and type, returns uprn, date, address, certificate no.
+def get_pdf_data(file, file_type):
+
+    uprn_rect = ""
+    date_rect = ""
+
+    if file_type == "EIC":
+        uprn_rect = (678.0, 148.17999267578125, 704.68798828125, 159.1719970703125)
+        date_rect = (258.0, 513.1800537109375, 298.031982421875, 524.1720581054688)
+        cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
+        address_line_1_rect = (578.0, 162.17999267578125, 800.0, 173.1719970703125)
+        address_line_2_rect = (553.0, 175.17999267578125, 800.0, 186.1719970703125)
+        postcode_rect = (588.0, 189.17999267578125, 670, 200.1719970703125)
+    elif file_type == "EICR":
+        job_no_rect = (400.0, 135.17999267578125, 460.8079833984375, 146.1719970703125)
+        #408.0, 135.17999267578125, 445.8079833984375, 146.1719970703125
+        uprn_rect = (582.0, 150.17999267578125, 608.68798828125, 161.1719970703125)
+        date_rect = (673.0, 464.17999267578125, 713.031982421875, 475.1719970703125)
+        cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
+        address_line_1_rect = (582.0, 162.17999267578125, 800.0, 174.1719970703125)
+        address_line_2_rect = (552.0, 177.17999267578125, 800.0, 188.1719970703125)
+        postcode_rect = (588.0, 189.17999267578125, 670.0, 200.1719970703125)
+    elif file_type == "MW":
+        uprn_rect = (572.0, 155.17999267578125, 598.68798828125, 166.1719970703125)
+        date_rect = (96.0, 251.17999267578125, 136.031982421875, 262.1719970703125)
+        cert_num_rect = (610.0, 41.220001220703125, 680.0, 52.23600387573242)
+        address_line_1_rect = (578.0, 168.17999267578125, 800.0, 179.1719970703125)
+        address_line_2_rect = (555.0, 181.17999267578125, 800.0, 192.1719970703125)
+        postcode_rect = (584.0, 195.17999267578125, 670.0, 206.1719970703125)
+    elif file_type == "VIS":
+        uprn_rect = (572.0, 150.17999267578125, 598.68798828125, 161.1719970703125)
+        date_rect = (696.0, 429.17999267578125, 736.031982421875, 440.1719970703125)
+        cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
+        address_line_1_rect = (578.0, 163.17999267578125, 800.0, 174.1719970703125)
+        address_line_2_rect = (552.0, 177.17999267578125, 800.0, 188.1719970703125)
+        postcode_rect = (578.0, 189.17999267578125, 670.0, 200.1719970703125)
+
+    with fitz.open(file) as doc:
+        uprn = clean_text(doc[0].get_textbox(uprn_rect))
+        date = clean_text(doc[0].get_textbox(date_rect))
+        cert_num = clean_text(doc[0].get_textbox(cert_num_rect))
+
+        if file_type == "EICR":
+            job_no = doc[0].get_textbox(job_no_rect)
+        else:
+            job_no = ""
+
+        address = clean_text(doc[0].get_textbox(address_line_1_rect))\
+                   + " " + clean_text(doc[0].get_textbox(address_line_2_rect))\
+                      + " " + clean_text(doc[0].get_textbox(postcode_rect))
+
+    return [uprn, date, address, cert_num, job_no]
+
+
+def rename_pdf_file(file, uprn, date, type, dir, cert_num):
+    naming_convention = ""
+
+    if type == "EICR":
+        arr = ['b', 'B', 'c', 'C']
+        for i in arr:
+            if i in uprn:
+                naming_convention = "C"
+            else:
+                naming_convention = "D"
+
+    old_file = os.path.join(dir, file)
+    new_file = os.path.join(dir, uprn + "_" + naming_convention + type + "_" + date + ".pdf")
+
+    try:
+        os.rename(old_file, new_file)
+    except WindowsError as e:
+        os.rename(old_file, os.path.join(dir, uprn + "_" + naming_convention + type + "_" + cert_num + "_" + date + ".pdf"))
+        logging.debug(e)
+
+    logging.info('Renamed : ' + old_file + ' to ' + new_file)
+    return new_file
+
+
+def clean_text(item):
+    special_characters = ['!', '#', '$', '%', '&', '@', '[', ']', ']', '_', '/', ',']
+
+    for i in special_characters:
+        item = item.replace(i, '')
+        item = item.strip()
+
+    return item
+
+
+def get_config(current_dir, file_name):
+    config_file = os.path.join(current_dir, file_name)
+    with open(config_file) as f:
+        config = yaml.load(f, Loader=SafeLoader)
+        return config
+
+
+def email_pdf(file, subject, receivers, config):
+    sender = config['email_account']['email']
+    password = config['email_account']['password']
+    host = config['email_account']['host']
+    port = config['email_account']['port']
+
+    main_message = email.mime.multipart.MIMEMultipart()
+    text_message = email.mime.text.MIMEText("Please find attached your certificate")
+
+    main_message.attach(text_message)
+
+    contype = 'application/pdf'
+    maintype, subtype = contype.split('/', 1)
+
+    data = open(file, 'rb')
+    file_message = email.mime.base.MIMEBase(maintype, subtype)
+    file_message.set_payload(data.read())
+    data.close()
+    email.encoders.encode_base64(file_message)
+    basename = os.path.basename(file)
+    file_message.add_header('Content-Disposition', 'attachment', filename=basename)
+    main_message.attach(file_message)
+
+    main_message['From'] = sender
+    main_message['To'] = ", ".join(receivers)
+    main_message['Subject'] = subject
+    main_message['Date'] = email.utils.formatdate()
+
+    fullText = main_message.as_string()
+
+    server = smtplib.SMTP(host, port)
+    try:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(sender, password)
+
+        server.sendmail(sender, receivers, fullText)
+        file_name = os.path.split(file)
+        logging.info("Email sent: " + file_name[1] + " To : " + ' '.join(receivers))
+    except smtplib.SMTPException as e:
+        logging.debug("Error sending email: " + e)
+    finally:
+        server.quit()
+
+
+def pdf_text_finder(file):
+    doc = fitz.open(file)
+    for page in doc:
+        wlist = page.get_text_words()
+        return wlist
+
+
+if __name__ == "__main__":
+    main()
+
+
+

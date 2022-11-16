@@ -13,6 +13,23 @@ from win32com.client import Dispatch
 def main():
     print("Starting PDF processor.")
     current_dir = os.getcwd()
+
+    if not os.path.exists(os.path.join(current_dir, 'Certificates')):
+        print("Missing directory structure, will now create.")
+        print("Application will now quit as no files to process in freshly created directory structure.")
+        time.sleep(1)
+        os.mkdir(os.path.join(current_dir, 'Certificates'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//EH'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//FWT'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//RR'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//KB'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//EH'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//FWT'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//RR'))
+        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//KB'))
+        quit()
+
     working_dir = os.path.join(current_dir, 'Certificates')
     print("Working directory is " + working_dir + ".")
     config = get_config(current_dir, "config.yaml")
@@ -27,7 +44,7 @@ def main():
 
     for sub in sub_folders:
         print("Processing files in " + sub + " folder.")
-        time.sleep(2)
+        time.sleep(1)
         process_files(working_dir, config, sub)
 
 
@@ -36,7 +53,7 @@ def process_files(working_dir, config, sub):
     files = scan_for_files(os.path.join(working_dir, sub))
     file_count = len(files)
     print("Files found: " + str(file_count))
-    time.sleep(2)
+    time.sleep(1)
     timestamp = get_timestamp()
     # Iterate through files
     for file in files:
@@ -61,7 +78,7 @@ def process_files(working_dir, config, sub):
 
                 if sub == "EH":
                     if config['actions']['auto_email_EH'] == "YES":
-                        time.sleep(2)
+                        time.sleep(1)
                         print("Emailing EMPTY HOMES certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
@@ -76,7 +93,7 @@ def process_files(working_dir, config, sub):
                         logging.info("Email EH disabled")
                 elif sub == "RR":
                     if config['actions']['auto_email_RR'] == "YES":
-                        time.sleep(2)
+                        time.sleep(1)
                         print("Emailing RESPONSIVE REPAIRS certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
@@ -93,7 +110,7 @@ def process_files(working_dir, config, sub):
                     print("Writing data to accu-serv list")
                     create_accuserv_list(working_dir, pdf_data[2], pdf_data[3], pdf_data[4], timestamp)
                     if config['actions']['auto_email_FWT'] == "YES":
-                        time.sleep(2)
+                        time.sleep(1)
                         print("Emailing FIXED WIRE TESTING certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
@@ -107,9 +124,9 @@ def process_files(working_dir, config, sub):
                         print("Auto emailing for FIXED WIRE TESTING disabled")
                         logging.info("Email FWT disabled")
                 elif sub == "KB":
-                    time.sleep(2)
+                    time.sleep(1)
                     if config['actions']['auto_email_KB'] == "YES":
-                        time.sleep(2)
+                        time.sleep(1)
                         print("Emailing KITCHEN & BATHROOM certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
@@ -281,9 +298,14 @@ def clean_text(item):
     return item
 
 
-def get_config(current_dir, file_name):
+def get_config(current_dir, config_file_name):
     print("Loading config file")
-    config_file = os.path.join(current_dir, file_name)
+    config_file = os.path.join(current_dir, config_file_name)
+    if not os.path.exists(config_file):
+        print("Main config file missing, please create.")
+        time.sleep(1)
+        quit()
+
     with open(config_file) as f:
         config = yaml.load(f, Loader=SafeLoader)
         print("Config file loaded successfully.")

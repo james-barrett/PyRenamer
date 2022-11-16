@@ -1,13 +1,14 @@
-email_addresses:
-  EH: ["email@com; email@com;"]
-  RR: ["email@com; email@com;"]
-  FWT: ["email@com; email@com;"]
-  KB: ["email@com; email@com;"]
-actions:
-  auto_email_KB: "YES"
-  auto_email_RR: "YES"
-  auto_email_FWT: "No"
-  auto_email_EH: "YES"
-  auto_delete_on_send: "YES"
-
-
+!!python/object/apply:types.GenericAlias
+- !!python/name:builtins.dict ''
+- !!python/tuple
+  - actions:
+      auto_delete_on_send: 'YES'
+      auto_email_EH: 'YES'
+      auto_email_FWT: 'No'
+      auto_email_KB: 'YES'
+      auto_email_RR: 'YES'
+    email_addresses:
+      EH: '[add@com; add@com;]'
+      FWT: '[add@com; add@com;]'
+      KB: '[add@com; add@com;]'
+      RR: '[add@com; add@com;]'

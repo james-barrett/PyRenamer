@@ -1,0 +1,29 @@
+In config.yaml 
+
+
+email section
+
+add the email address or multiple addresses wanted for each department to recieve the PDF 
+in the format as below
+
+email_addresses:
+  EH: ["address1@hotmail.com; address2@gmail.com;"]
+  RR: ""
+  FWT: ""
+  KB: ""
+
+action section
+
+YES or NO
+
+auto email option per department
+
+
+auto delete option, only active if auto email is set to YES, if YES file is deleted after emailing, if NO file is moved to _processed folder
+
+actions:
+  auto_email_KB: "YES"
+  auto_email_RR: "YES"
+  auto_email_FWT: "No"
+  auto_email_EH: "NO"
+  auto_delete_on_send: "YES"

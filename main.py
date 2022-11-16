@@ -215,7 +215,7 @@ def get_pdf_data(file, file_type):
     date_rect = ""
 
     if file_type == "EIC":
-        uprn_rect = (678.0, 148.17999267578125, 704.68798828125, 159.1719970703125)
+        uprn_rect = (678.0, 148.17999267578125, 740.68798828125, 159.1719970703125)
         date_rect = (258.0, 513.1800537109375, 298.031982421875, 524.1720581054688)
         cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
         address_line_1_rect = (578.0, 162.17999267578125, 800.0, 173.1719970703125)
@@ -224,21 +224,21 @@ def get_pdf_data(file, file_type):
     elif file_type == "EICR":
         job_no_rect = (400.0, 135.17999267578125, 460.8079833984375, 146.1719970703125)
         #408.0, 135.17999267578125, 445.8079833984375, 146.1719970703125
-        uprn_rect = (582.0, 150.17999267578125, 608.68798828125, 161.1719970703125)
+        uprn_rect = (582.0, 150.17999267578125, 650.68798828125, 161.1719970703125)
         date_rect = (673.0, 464.17999267578125, 713.031982421875, 475.1719970703125)
         cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
         address_line_1_rect = (582.0, 162.17999267578125, 800.0, 174.1719970703125)
         address_line_2_rect = (552.0, 177.17999267578125, 800.0, 188.1719970703125)
         postcode_rect = (588.0, 189.17999267578125, 670.0, 200.1719970703125)
     elif file_type == "MW":
-        uprn_rect = (572.0, 155.17999267578125, 598.68798828125, 166.1719970703125)
+        uprn_rect = (572.0, 155.17999267578125, 640.68798828125, 166.1719970703125)
         date_rect = (96.0, 251.17999267578125, 136.031982421875, 262.1719970703125)
         cert_num_rect = (610.0, 41.220001220703125, 680.0, 52.23600387573242)
         address_line_1_rect = (578.0, 168.17999267578125, 800.0, 179.1719970703125)
         address_line_2_rect = (555.0, 181.17999267578125, 800.0, 192.1719970703125)
         postcode_rect = (584.0, 195.17999267578125, 670.0, 206.1719970703125)
     elif file_type == "VIS":
-        uprn_rect = (572.0, 150.17999267578125, 598.68798828125, 161.1719970703125)
+        uprn_rect = (572.0, 150.17999267578125, 640.68798828125, 161.1719970703125)
         date_rect = (696.0, 429.17999267578125, 736.031982421875, 440.1719970703125)
         cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
         address_line_1_rect = (578.0, 163.17999267578125, 800.0, 174.1719970703125)
@@ -265,23 +265,27 @@ def get_pdf_data(file, file_type):
 def rename_pdf_file(file, uprn, date, type, dir, cert_num):
     time.sleep(1)
     naming_convention = ""
+    clean_uprn = clean_text(uprn)
 
     if type == "EICR":
-        arr = ['b', 'B', 'c', 'C']
-        for i in arr:
-            if i in uprn:
-                naming_convention = "C"
-            else:
-                naming_convention = "D"
+        if any(c.isalpha() for c in uprn):
+            naming_convention = "C"
+        else:
+            naming_convention = "D"
+
+    uprn_num = "".join(i for i in clean_uprn if not i.isalpha())
+
+    if len(uprn_num) < 1:
+        uprn_num = "MISSING"
 
     old_file = os.path.join(dir, file)
-    new_file = os.path.join(dir, uprn + "_" + naming_convention + type + "_" + date + ".pdf")
+    new_file = os.path.join(dir, uprn_num + "_" + naming_convention + type + "_" + date + ".pdf")
 
     try:
         os.rename(old_file, new_file)
     except WindowsError as e:
         print("Renaming error possible duplicate file, appending certificate number to file name")
-        os.rename(old_file, os.path.join(dir, uprn + "_" + naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
+        os.rename(old_file, os.path.join(dir, uprn_num + "_" + naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
         logging.debug(e)
 
     logging.info('Renamed : ' + old_file + ' to ' + new_file)

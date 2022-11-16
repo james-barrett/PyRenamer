@@ -1,1 +1,13 @@
+email_addresses:
+  EH: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
+  RR: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
+  FWT: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
+  KB: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
+actions:
+  auto_email_KB: "YES"
+  auto_email_RR: "YES"
+  auto_email_FWT: "No"
+  auto_email_EH: "YES"
+  auto_delete_on_send: "YES"
+
 

@@ -27,6 +27,7 @@ def main():
 
     for sub in sub_folders:
         print("Processing files in " + sub + " folder.")
+        time.sleep(2)
         process_files(working_dir, config, sub)
 
 
@@ -35,7 +36,7 @@ def process_files(working_dir, config, sub):
     files = scan_for_files(os.path.join(working_dir, sub))
     file_count = len(files)
     print("Files found: " + str(file_count))
-    time.sleep(10)
+    time.sleep(2)
     timestamp = get_timestamp()
     # Iterate through files
     for file in files:
@@ -44,6 +45,7 @@ def process_files(working_dir, config, sub):
             file_type = get_file_type(file)
             # Check we have a known certificate type
             if file_type != None:
+                print("Found " + file_type + " start processing.")
                 # Set working folder for EH
                 folder_path = os.path.join(working_dir, sub)
 
@@ -51,52 +53,74 @@ def process_files(working_dir, config, sub):
                 #print(pdf_text_finder(os.path.join(folder_path, file)))
 
                 # Get needed data from the pdf
+                print("Grab data from PDF file " + file)
                 pdf_data = get_pdf_data(os.path.join(folder_path, file), file_type)
+                time.sleep(1)
                 # Rename the pdf
                 file_new = rename_pdf_file(file, pdf_data[0], pdf_data[1], file_type, folder_path, pdf_data[3])
-                #[uprn, date, address, cert_num, job_no]
-                # Email pdf to needed addresses
 
                 if sub == "EH":
                     if config['actions']['auto_email_EH'] == "YES":
+                        time.sleep(2)
+                        print("Emailing EMPTY HOMES certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
+                            print("Deleting " + os.path.basename(file_new))
                             delete_file(file_new)
                         else:
+                            print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
                             move_processed_file(working_dir, file_new, sub)
                         logging.info("Email EH enabled")
                     else:
+                        print("Auto emailing for EMPTY HOMES disabled")
                         logging.info("Email EH disabled")
                 elif sub == "RR":
                     if config['actions']['auto_email_RR'] == "YES":
+                        time.sleep(2)
+                        print("Emailing RESPONSIVE REPAIRS certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
+                            print("Deleting " + os.path.basename(file_new))
                             delete_file(file_new)
                         else:
+                            print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
                             move_processed_file(working_dir, file_new, sub)
                         logging.info("Email RR enabled")
                     else:
+                        print("Auto emailing for RESPONSIVE REPAIRS disabled")
                         logging.info("Email RR disabled")
                 elif sub == "FWT":
+                    print("Writing data to accu-serv list")
                     create_accuserv_list(working_dir, pdf_data[2], pdf_data[3], pdf_data[4], timestamp)
                     if config['actions']['auto_email_FWT'] == "YES":
+                        time.sleep(2)
+                        print("Emailing FIXED WIRE TESTING certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
+                            print("Deleting " + os.path.basename(file_new))
                             delete_file(file_new)
                         else:
+                            print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
                             move_processed_file(working_dir, file_new, sub)
                         logging.info("Email FWT enabled")
                     else:
+                        print("Auto emailing for FIXED WIRE TESTING disabled")
                         logging.info("Email FWT disabled")
                 elif sub == "KB":
+                    time.sleep(2)
                     if config['actions']['auto_email_KB'] == "YES":
+                        time.sleep(2)
+                        print("Emailing KITCHEN & BATHROOM certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
+                            print("Deleting " + os.path.basename(file_new))
                             delete_file(file_new)
                         else:
+                            print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
                             move_processed_file(working_dir, file_new, sub)
                         logging.info("Email KB enabled")
                     else:
+                        print("Auto emailing for KITCHEN & BATHROOM disabled")
                         logging.info("Email KB disabled")
                 else:
                     pass
@@ -152,6 +176,7 @@ def get_file_type(file):
     elif "DVCR" in file_name:
         return "VIS"
     else:
+        print("Found un-usable file " + os.path.basename(file) + ", already processed?")
         pass
 
 
@@ -221,6 +246,7 @@ def get_pdf_data(file, file_type):
 
 
 def rename_pdf_file(file, uprn, date, type, dir, cert_num):
+    time.sleep(1)
     naming_convention = ""
 
     if type == "EICR":
@@ -237,7 +263,8 @@ def rename_pdf_file(file, uprn, date, type, dir, cert_num):
     try:
         os.rename(old_file, new_file)
     except WindowsError as e:
-        os.rename(old_file, os.path.join(dir, uprn + "_" + naming_convention + type + "_" + cert_num + "_" + date + ".pdf"))
+        print("Renaming error possible duplicate file, appending certificate number to file name")
+        os.rename(old_file, os.path.join(dir, uprn + "_" + naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
         logging.debug(e)
 
     logging.info('Renamed : ' + old_file + ' to ' + new_file)

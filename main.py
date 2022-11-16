@@ -1,24 +1,20 @@
-## better logging - multiple?
-## more testing
-## better comments
-
 import fitz
 import logging
 
 import yaml
 from yaml.loader import SafeLoader
 
-import smtplib
-import email.mime.multipart
-import email.mime.text
-import email.mime.base
-
 import os
 import time
 
+from win32com.client import Dispatch
+
+
 def main():
+    print("Starting PDF processor.")
     current_dir = os.getcwd()
     working_dir = os.path.join(current_dir, 'Certificates')
+    print("Working directory is " + working_dir + ".")
     config = get_config(current_dir, "config.yaml")
 
     logging.basicConfig(level=logging.DEBUG,
@@ -30,12 +26,16 @@ def main():
     sub_folders = ['EH', 'FWT', 'RR', 'KB']
 
     for sub in sub_folders:
+        print("Processing files in " + sub + " folder.")
         process_files(working_dir, config, sub)
 
 
 def process_files(working_dir, config, sub):
     # Get file list for EH sub directory
     files = scan_for_files(os.path.join(working_dir, sub))
+    file_count = len(files)
+    print("Files found: " + str(file_count))
+    time.sleep(10)
     timestamp = get_timestamp()
     # Iterate through files
     for file in files:
@@ -255,56 +255,23 @@ def clean_text(item):
 
 
 def get_config(current_dir, file_name):
+    print("Loading config file")
     config_file = os.path.join(current_dir, file_name)
     with open(config_file) as f:
         config = yaml.load(f, Loader=SafeLoader)
+        print("Config file loaded successfully.")
         return config
 
 
 def email_pdf(file, subject, receivers, config):
-    sender = config['email_account']['email']
-    password = config['email_account']['password']
-    host = config['email_account']['host']
-    port = config['email_account']['port']
 
-    main_message = email.mime.multipart.MIMEMultipart()
-    text_message = email.mime.text.MIMEText("Please find attached your certificate")
-
-    main_message.attach(text_message)
-
-    contype = 'application/pdf'
-    maintype, subtype = contype.split('/', 1)
-
-    data = open(file, 'rb')
-    file_message = email.mime.base.MIMEBase(maintype, subtype)
-    file_message.set_payload(data.read())
-    data.close()
-    email.encoders.encode_base64(file_message)
-    basename = os.path.basename(file)
-    file_message.add_header('Content-Disposition', 'attachment', filename=basename)
-    main_message.attach(file_message)
-
-    main_message['From'] = sender
-    main_message['To'] = ", ".join(receivers)
-    main_message['Subject'] = subject
-    main_message['Date'] = email.utils.formatdate()
-
-    fullText = main_message.as_string()
-
-    server = smtplib.SMTP(host, port)
-    try:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(sender, password)
-
-        server.sendmail(sender, receivers, fullText)
-        file_name = os.path.split(file)
-        logging.info("Email sent: " + file_name[1] + " To : " + ' '.join(receivers))
-    except smtplib.SMTPException as e:
-        logging.debug("Error sending email: " + e)
-    finally:
-        server.quit()
+    outlook = Dispatch("Outlook.Application")
+    message = outlook.CreateItem(0)
+    message.To = "".join(receivers)
+    message.Subject = subject
+    message.Attachments.Add(Source=file)
+    message.Body = "Please Find Attached Your Certificate"
+    message.Send()
 
 
 def pdf_text_finder(file):

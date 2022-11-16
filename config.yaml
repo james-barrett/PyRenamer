@@ -1,8 +1,8 @@
 email_addresses:
-  EH: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
-  RR: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
-  FWT: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
-  KB: ["jamesdeanbarrett@hotmail.com; jamesdeanbarrett@gmail.com;"]
+  EH: ["email@com; email@com;"]
+  RR: ["email@com; email@com;"]
+  FWT: ["email@com; email@com;"]
+  KB: ["email@com; email@com;"]
 actions:
   auto_email_KB: "YES"
   auto_email_RR: "YES"

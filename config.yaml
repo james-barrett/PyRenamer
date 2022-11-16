@@ -1,5 +1,5 @@
 email_addresses:
-  EH: ["1@hotmail.com","2@gmail.com"]
+  EH: ["1@hotmail.com; 2@gmail.com;"]
   RR: ""
   FWT: ""
   KB: ""

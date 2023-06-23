@@ -14,6 +14,8 @@ def main():
     print("Starting PDF processor.")
     current_dir = os.getcwd()
 
+    # fix checks for missing folders, create individual folders if found missing.
+
     if not os.path.exists(os.path.join(current_dir, 'Certificates')):
         print("Missing directory structure, will now create.")
         print("Application will now quit as no files to process in freshly created directory structure.")

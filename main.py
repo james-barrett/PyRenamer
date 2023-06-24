@@ -15,6 +15,7 @@ def main():
     print("Starting PDF processor.")
     current_dir = os.getcwd()
 
+    # Needed directory structure
     dirs = [
         'Certificates',
         'Certificates\\EH',
@@ -27,19 +28,18 @@ def main():
         'Certificates\\_PROCESSED\\RR',
         'Certificates\\_PROCESSED\\KB'
     ]
+    config_file = "config.yaml"
 
     # Check for missing directory and create if missing.
     dirs_check(dirs, current_dir)
 
-    working_dir = os.path.join(current_dir, 'Certificates')
-    print("Working directory is " + working_dir + ".")
-    config = get_config(current_dir, "config.yaml")
+    working_dir = os.path.join(current_dir, dirs[0])
 
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                        datefmt='%a, %d %b %Y %H:%M:%S',
-                        filename=os.path.join(current_dir, 'renamer.log'),
-                        filemode='a+')
+    print('Working directory is {}.', format(working_dir))
+
+    config = get_config(current_dir, config_file)
+
+    set_logging(current_dir)
 
     sub_folders = ['EH', 'FWT', 'RR', 'KB']
 
@@ -54,6 +54,14 @@ def dirs_check(dirs, current_dir):
         if not os.path.exists(os.path.join(current_dir, d)):
             print("Missing directory found, creating {}.".format(os.path.join(current_dir, d)))
             os.mkdir(os.path.join(current_dir, d))
+
+
+def set_logging(current_dir):
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        filename=os.path.join(current_dir, 'renamer.log'),
+                        filemode='a+')
 
 
 def process_files(working_dir, config, sub):

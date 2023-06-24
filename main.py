@@ -7,30 +7,29 @@ from yaml.loader import SafeLoader
 import os
 import time
 
-from win32com.client import Dispatch
+
+# from win32com.client import Dispatch
 
 
 def main():
     print("Starting PDF processor.")
     current_dir = os.getcwd()
 
-    # fix checks for missing folders, create individual folders if found missing.
+    dirs = [
+        'Certificates',
+        'Certificates\\EH',
+        'Certificates\\FWT',
+        'Certificates\\RR',
+        'Certificates\\KB',
+        'Certificates\\_PROCESSED',
+        'Certificates\\_PROCESSED\\EH',
+        'Certificates\\_PROCESSED\\FWT',
+        'Certificates\\_PROCESSED\\RR',
+        'Certificates\\_PROCESSED\\KB'
+    ]
 
-    if not os.path.exists(os.path.join(current_dir, 'Certificates')):
-        print("Missing directory structure, will now create.")
-        print("Application will now quit as no files to process in freshly created directory structure.")
-        time.sleep(1)
-        os.mkdir(os.path.join(current_dir, 'Certificates'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//EH'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//FWT'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//RR'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//KB'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//EH'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//FWT'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//RR'))
-        os.mkdir(os.path.join(current_dir, 'Certificates//_PROCESSED//KB'))
-        quit()
+    # Check for missing directory and create if missing.
+    dirs_check(dirs, current_dir)
 
     working_dir = os.path.join(current_dir, 'Certificates')
     print("Working directory is " + working_dir + ".")
@@ -48,6 +47,13 @@ def main():
         print("Processing files in " + sub + " folder.")
         time.sleep(1)
         process_files(working_dir, config, sub)
+
+
+def dirs_check(dirs, current_dir):
+    for d in dirs:
+        if not os.path.exists(os.path.join(current_dir, d)):
+            print("Missing directory found, creating {}.".format(os.path.join(current_dir, d)))
+            os.mkdir(os.path.join(current_dir, d))
 
 
 def process_files(working_dir, config, sub):
@@ -69,7 +75,7 @@ def process_files(working_dir, config, sub):
                 folder_path = os.path.join(working_dir, sub)
 
                 # Helper function to get text rects
-                #print(pdf_text_finder(os.path.join(folder_path, file)))
+                # print(pdf_text_finder(os.path.join(folder_path, file)))
 
                 # Get needed data from the pdf
                 print("Grab data from PDF file " + file)
@@ -81,7 +87,8 @@ def process_files(working_dir, config, sub):
                 if sub == "EH":
                     if config['actions']['auto_email_EH'] == "YES":
                         time.sleep(1)
-                        print("Emailing EMPTY HOMES certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
+                        print("Emailing EMPTY HOMES certificate to " + os.path.basename(file_new) + " to " + "".join(
+                            config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
                             print("Deleting " + os.path.basename(file_new))
@@ -96,7 +103,8 @@ def process_files(working_dir, config, sub):
                 elif sub == "RR":
                     if config['actions']['auto_email_RR'] == "YES":
                         time.sleep(1)
-                        print("Emailing RESPONSIVE REPAIRS certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
+                        print("Emailing RESPONSIVE REPAIRS certificate to " + os.path.basename(
+                            file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
                             print("Deleting " + os.path.basename(file_new))
@@ -113,7 +121,8 @@ def process_files(working_dir, config, sub):
                     create_accuserv_list(working_dir, pdf_data[2], pdf_data[3], pdf_data[4], timestamp)
                     if config['actions']['auto_email_FWT'] == "YES":
                         time.sleep(1)
-                        print("Emailing FIXED WIRE TESTING certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
+                        print("Emailing FIXED WIRE TESTING certificate to " + os.path.basename(
+                            file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
                             print("Deleting " + os.path.basename(file_new))
@@ -129,7 +138,8 @@ def process_files(working_dir, config, sub):
                     time.sleep(1)
                     if config['actions']['auto_email_KB'] == "YES":
                         time.sleep(1)
-                        print("Emailing KITCHEN & BATHROOM certificate to " + os.path.basename(file_new) + " to " + "".join(config['email_addresses'][sub]))
+                        print("Emailing KITCHEN & BATHROOM certificate to " + os.path.basename(
+                            file_new) + " to " + "".join(config['email_addresses'][sub]))
                         email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
                         if config['actions']['auto_delete_on_send'] == "YES":
                             print("Deleting " + os.path.basename(file_new))
@@ -174,7 +184,7 @@ def delete_file(file):
 
 
 def move_processed_file(working_dir, file, sub):
-    processed_dir = os.path.join(working_dir, '_PROCESSED\\'  + sub)
+    processed_dir = os.path.join(working_dir, '_PROCESSED\\' + sub)
     file_name = os.path.basename(file)
     try:
         os.rename(file, os.path.join(processed_dir, file_name))
@@ -212,7 +222,6 @@ def is_pdf(file):
 
 # Pass in file and type, returns uprn, date, address, certificate no.
 def get_pdf_data(file, file_type):
-
     uprn_rect = ""
     date_rect = ""
 
@@ -225,7 +234,7 @@ def get_pdf_data(file, file_type):
         postcode_rect = (588.0, 189.17999267578125, 670, 200.1719970703125)
     elif file_type == "EICR":
         job_no_rect = (400.0, 135.17999267578125, 460.8079833984375, 146.1719970703125)
-        #408.0, 135.17999267578125, 445.8079833984375, 146.1719970703125
+        # 408.0, 135.17999267578125, 445.8079833984375, 146.1719970703125
         uprn_rect = (582.0, 150.17999267578125, 650.68798828125, 161.1719970703125)
         date_rect = (673.0, 464.17999267578125, 713.031982421875, 475.1719970703125)
         cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
@@ -257,9 +266,9 @@ def get_pdf_data(file, file_type):
         else:
             job_no = ""
 
-        address = clean_text(doc[0].get_textbox(address_line_1_rect))\
-                   + " " + clean_text(doc[0].get_textbox(address_line_2_rect))\
-                      + " " + clean_text(doc[0].get_textbox(postcode_rect))
+        address = clean_text(doc[0].get_textbox(address_line_1_rect)) \
+                  + " " + clean_text(doc[0].get_textbox(address_line_2_rect)) \
+                  + " " + clean_text(doc[0].get_textbox(postcode_rect))
 
     return [uprn, date, address, cert_num, job_no]
 
@@ -287,7 +296,8 @@ def rename_pdf_file(file, uprn, date, type, dir, cert_num):
         os.rename(old_file, new_file)
     except WindowsError as e:
         print("Renaming error possible duplicate file, appending certificate number to file name")
-        os.rename(old_file, os.path.join(dir, uprn_num + "_" + naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
+        os.rename(old_file,
+                  os.path.join(dir, uprn_num + "_" + naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
         logging.debug(e)
 
     logging.info('Renamed : ' + old_file + ' to ' + new_file)
@@ -319,7 +329,6 @@ def get_config(current_dir, config_file_name):
 
 
 def email_pdf(file, subject, receivers, config):
-
     outlook = Dispatch("Outlook.Application")
     message = outlook.CreateItem(0)
     message.To = "".join(receivers)
@@ -338,6 +347,3 @@ def pdf_text_finder(file):
 
 if __name__ == "__main__":
     main()
-
-
-

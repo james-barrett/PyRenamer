@@ -37,14 +37,17 @@ def main():
 
     print('Working directory is {}.', format(working_dir))
 
+    # Get config file
     config = get_config(current_dir, config_file)
 
+    # Set logging
     set_logging(current_dir)
 
+    # Process department folders
     sub_folders = ['EH', 'FWT', 'RR', 'KB']
 
     for sub in sub_folders:
-        print("Processing files in " + sub + " folder.")
+        print("Processing files in {} folder.", format(sub))
         time.sleep(1)
         process_files(working_dir, config, sub)
 
@@ -65,30 +68,32 @@ def set_logging(current_dir):
 
 
 def process_files(working_dir, config, sub):
-    # Get file list for EH sub directory
+    # Get file list for sub directory
     files = scan_for_files(os.path.join(working_dir, sub))
     file_count = len(files)
-    print("Files found: " + str(file_count))
-    time.sleep(1)
+    print("Files found: {}", format(file_count))
     timestamp = get_timestamp()
     # Iterate through files
     for file in files:
         # Check if we have a pdf
-        if is_pdf(file):
+        if not is_pdf(file):
+            pass
+        else:
             file_type = get_file_type(file)
             # Check we have a known certificate type
-            if file_type != None:
-                print("Found " + file_type + " start processing.")
-                # Set working folder for EH
+            if file_type is None:
+                pass
+            else:
+                print("Found {} start processing.", format(file_type))
+                # Set working dir
                 folder_path = os.path.join(working_dir, sub)
 
                 # Helper function to get text rects
                 # print(pdf_text_finder(os.path.join(folder_path, file)))
 
                 # Get needed data from the pdf
-                print("Grab data from PDF file " + file)
+                print("Grab data from PDF file {}", format(file))
                 pdf_data = get_pdf_data(os.path.join(folder_path, file), file_type)
-                time.sleep(1)
                 # Rename the pdf
                 file_new = rename_pdf_file(file, pdf_data[0], pdf_data[1], file_type, folder_path, pdf_data[3])
 
@@ -161,10 +166,6 @@ def process_files(working_dir, config, sub):
                         logging.info("Email KB disabled")
                 else:
                     pass
-            else:
-                pass
-        else:
-            pass
 
 
 def get_timestamp():
@@ -212,8 +213,10 @@ def get_file_type(file):
         return "MW"
     elif "DVCR" in file_name:
         return "VIS"
+    elif "DFHN" in file_name:
+        return "DFHN"
     else:
-        print("Found un-usable file " + os.path.basename(file) + ", already processed?")
+        print("Found un-usable file {}.", format(os.path.basename(file)))
         pass
 
 

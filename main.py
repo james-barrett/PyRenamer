@@ -35,7 +35,8 @@ def main():
 
     working_dir = os.path.join(current_dir, dirs[0])
 
-    print('Working directory is {}.', format(working_dir))
+    print('Working directory is {}.'.format(working_dir))
+
 
     # Get config file
     config = get_config(current_dir, config_file)
@@ -47,7 +48,7 @@ def main():
     sub_folders = ['EH', 'FWT', 'RR', 'KB']
 
     for sub in sub_folders:
-        print("Processing files in {} folder.", format(sub))
+        print('Processing files in {} folder.'.format(sub))
         time.sleep(1)
         process_files(working_dir, config, sub)
 
@@ -55,7 +56,7 @@ def main():
 def dirs_check(dirs, current_dir):
     for d in dirs:
         if not os.path.exists(os.path.join(current_dir, d)):
-            print("Missing directory found, creating {}.".format(os.path.join(current_dir, d)))
+            print('Missing directory found, creating {}.'.format(os.path.join(current_dir, d)))
             os.mkdir(os.path.join(current_dir, d))
 
 
@@ -71,7 +72,7 @@ def process_files(working_dir, config, sub):
     # Get file list for sub directory
     files = scan_for_files(os.path.join(working_dir, sub))
     file_count = len(files)
-    print("Files found: {}", format(file_count))
+    print('Files found: {}'.format(file_count))
     timestamp = get_timestamp()
     # Iterate through files
     for file in files:

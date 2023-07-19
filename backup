@@ -1,0 +1,95 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    if sub == "EH":
+                        if config['actions']['auto_email_EH'] == "YES":
+                            time.sleep(1)
+                            print("Emailing EMPTY HOMES certificate to " + os.path.basename(file_new) + " to " + "".join(
+                                config['email_addresses'][sub]))
+                            email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                            if config['actions']['auto_delete_on_send'] == "YES":
+                                print("Deleting " + os.path.basename(file_new))
+                                os.remove(file_new)
+                            else:
+                                print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
+                                move_processed_file(working_dir, file_new, sub)
+                            logging.info("Email EH enabled")
+                        else:
+                            print("Auto emailing for EMPTY HOMES disabled")
+                            logging.info("Email EH disabled")
+                    elif sub == "RR":
+                        if config['actions']['auto_email_RR'] == "YES":
+                            time.sleep(1)
+                            print("Emailing RESPONSIVE REPAIRS certificate to " + os.path.basename(
+                                file_new) + " to " + "".join(config['email_addresses'][sub]))
+                            email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                            if config['actions']['auto_delete_on_send'] == "YES":
+                                print("Deleting " + os.path.basename(file_new))
+                                os.remove(file_new)
+                            else:
+                                print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
+                                move_processed_file(working_dir, file_new, sub)
+                            logging.info("Email RR enabled")
+                        else:
+                            print("Auto emailing for RESPONSIVE REPAIRS disabled")
+                            logging.info("Email RR disabled")
+                    elif sub == "FWT":
+                        print("Writing data to accu-serv list")
+                        create_accuserv_list(working_dir, pdf_data[2], pdf_data[3], pdf_data[4], timestamp)
+                        if config['actions']['auto_email_FWT'] == "YES":
+                            time.sleep(1)
+                            print("Emailing FIXED WIRE TESTING certificate to " + os.path.basename(
+                                file_new) + " to " + "".join(config['email_addresses'][sub]))
+                            email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                            if config['actions']['auto_delete_on_send'] == "YES":
+                                print("Deleting " + os.path.basename(file_new))
+                                os.remove(file_new)
+                            else:
+                                print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
+                                move_processed_file(working_dir, file_new, sub)
+                            logging.info("Email FWT enabled")
+                        else:
+                            print("Auto emailing for FIXED WIRE TESTING disabled")
+                            logging.info("Email FWT disabled")
+                    elif sub == "KB":
+                        time.sleep(1)
+                        if config['actions']['auto_email_KB'] == "YES":
+                            time.sleep(1)
+                            print("Emailing KITCHEN & BATHROOM certificate to " + os.path.basename(
+                                file_new) + " to " + "".join(config['email_addresses'][sub]))
+                            email_pdf(file_new, pdf_data[2], config['email_addresses'][sub], config)
+                            if config['actions']['auto_delete_on_send'] == "YES":
+                                print("Deleting " + os.path.basename(file_new))
+                                os.remove(file_new)
+                            else:
+                                print("Moving " + os.path.basename(file_new) + " to _PROCESSED folder")
+                                move_processed_file(working_dir, file_new, sub)
+                            logging.info("Email KB enabled")
+                        else:
+                            print("Auto emailing for KITCHEN & BATHROOM disabled")
+                            logging.info("Email KB disabled")
+                    else:
+                        pass

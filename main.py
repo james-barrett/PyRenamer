@@ -97,7 +97,7 @@ def main():
                     folder_path = os.path.join(working_dir, sub)
 
                     # Helper function to get text rects used for development
-                    # print(pdf_text_finder(os.path.join(folder_path, file)))
+                    #print(dev_helper.pdf_text_finder(os.path.join(folder_path, file)))
 
                     # Get needed data from the pdf
                     pdf_data = helper.get_pdf_data(os.path.join(folder_path, file), file_type)
@@ -108,7 +108,7 @@ def main():
                     # End of renaming function config specific actions follow.
                     # Get post renaming actions from config
 
-                    if sub == 'FWT':
+                    if sub == 'FWT' and file_type == 'EICR':
                         print("Writing data to accu-serv list")
                         helper.create_accuserv_list(working_dir, pdf_data, timestamp)
 
@@ -129,10 +129,6 @@ def main():
                         print('Auto emailing for {} disabled'.format(sub))
                         print('Moving {} to processed folder'.format(file_new))
                         helper.move_processed_file(working_dir, file_new, sub)
-
-
-
-
 
 
 if __name__ == "__main__":

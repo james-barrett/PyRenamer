@@ -1,5 +1,5 @@
 EH:
-  auto_email: 'YES'
+  auto_email: 'NO'
   delete_on_send: 'YES'
   email_recipients: ['jamesdeanbarrett@gmail.com; jamesdeanbarrett@hotmail.com;']
 KB:

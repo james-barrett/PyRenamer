@@ -18,16 +18,19 @@ def is_pdf(file):
 
 
 def get_config(current_dir, config_file_name):
-    print("Loading config file")
+    logging.info('Loading config file')
+    print('Loading config file')
     config_file = os.path.join(current_dir, config_file_name)
     if not os.path.exists(config_file):
-        print("Main config file missing, please create.")
+        logging.error('Main config file missing, please create.')
+        print('Main config file missing, please create.')
         time.sleep(1)
         quit()
 
     with open(config_file) as f:
         config = yaml.load(f, Loader=SafeLoader)
-        print("Config file loaded successfully.")
+        logging.info('Config file loaded successfully.')
+        print('Config file loaded successfully.')
         return config
 
 
@@ -35,22 +38,6 @@ def get_config(current_dir, config_file_name):
 def scan_for_files(directory):
     for path, subdirs, files in os.walk(directory):
         return files
-
-
-def get_file_type(file):
-    # Split path and file name
-    path, file_name = os.path.split(file)
-    # Check what type of certificate we have
-    if "EIC182C" in file_name:
-        return "EIC"
-    elif "EICR182C" in file_name:
-        return "EICR"
-    elif "MWC182C" in file_name:
-        return "MW"
-    elif "DVCR" in file_name:
-        return "VIS"
-    else:
-        return None
 
 
 def get_timestamp():
@@ -78,7 +65,8 @@ def get_pdf_data(file, file_type):
         # 408.0, 135.17999267578125, 445.8079833984375, 146.1719970703125
         uprn_rect = (582.0, 150.17999267578125, 650.68798828125, 161.1719970703125)
         #date_rect = (673.0, 464.17999267578125, 713.031982421875, 475.1719970703125)
-        date_rect = (190.0, 276.17999267578125, 230.031982421875, 287.1719970703125)
+        # original date_rect = (190.0, 276.17999267578125, 230.031982421875, 287.1719970703125)
+        date_rect = (190.0, 276.17999267578125, 277.17596435546875, 287.1719970703125)
         #190.0, 276.17999267578125, 230.031982421875, 287.1719970703125
         #190.0, 276.17999267578125, 230.031982421875, 287.1719970703125
         cert_num_rect = (610.0, 40.220001220703125, 680.0, 51.23600387573242)
@@ -119,21 +107,15 @@ def get_pdf_data(file, file_type):
 
 
 def rename_pdf_file(file, uprn, date, type, dir, cert_num):
-    time.sleep(1)
+
     naming_convention = ""
     clean_uprn = clean_text(uprn)
 
     if type == "EICR":
-        if 'DW' not in clean_uprn.upper():
-            if any(c.isalpha() for c in uprn):
-                naming_convention = "C"
-            else:
-                naming_convention = "D"
+        if any(c.isalpha() for c in uprn):
+            naming_convention = "C"
         else:
             naming_convention = "D"
-
-
-    #uprn_num = "".join(i for i in clean_uprn if not i.isalpha())
 
     if len(clean_uprn) < 1:
         clean_uprn = "MISSING"
@@ -144,22 +126,40 @@ def rename_pdf_file(file, uprn, date, type, dir, cert_num):
     try:
         os.rename(old_file, new_file)
     except WindowsError as e:
-        print("Renaming error possible duplicate file, appending certificate number to file name")
-        os.rename(old_file,
-                  os.path.join(dir, clean_uprn + "_" + naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
         logging.debug(e)
+        try:
+            logging.info('FILE RENAME ERROR: Trying to append certificate number to {}.'.format(new_file))
+            print('FILE RENAME ERROR: Trying to append certificate number to {}.'.format(new_file))
+            os.rename(old_file,
+                      os.path.join(dir,
+                                   clean_uprn + "_" +
+                                   naming_convention + type + "_" + date + "_" + cert_num + ".pdf"))
+        except WindowsError as e:
+            logging.info('FILE RENAME ERROR: Failed to rename file on second attempt.')
+            print('FILE RENAME ERROR: Failed to rename file on second attempt.')
+            logging.debug(e)
 
-    logging.info('Renamed : ' + old_file + ' to ' + new_file)
     return new_file
 
 
-def move_processed_file(working_dir, file, sub):
+def move_processed_file(working_dir, file, sub, cert_num):
     processed_dir = os.path.join(working_dir, '_PROCESSED\\' + sub)
     file_name = os.path.basename(file)
     try:
+        logging.info('Moving {} to _PROCESSED {} directory.'.format(file_name, sub))
+        print('Moving {} to _PROCESSED {} directory.'.format(file_name, sub))
         os.rename(file, os.path.join(processed_dir, file_name))
     except WindowsError as e:
-        os.remove(file)
+        logging.debug(e)
+        try:
+            logging.info('FILE MOVE ERROR: Trying to append certificate number to {}, {}'.format(file_name, sub))
+            print('FILE MOVE ERROR: Trying to append certificate number to {}, {}'.format(file_name, sub))
+            amended_file_name = os.path.splitext(file_name)[0] + '_' + cert_num + '.pdf'
+            os.rename(file, os.path.join(processed_dir, amended_file_name))
+        except WindowsError as e:
+            logging.info('FILE MOVE ERROR: Failed to move file on second attempt.')
+            print('FILE MOVE ERROR: Failed to move file on second attempt.')
+            logging.debug(e)
 
 
 def clean_text(item):
@@ -184,7 +184,7 @@ def create_accuserv_list(working_dir, data, timestamp):
     file.close()
 
 
-def email_pdf(file, subject, receivers, config):
+def email_pdf(file, subject, receivers):
     outlook = Dispatch("Outlook.Application")
     message = outlook.CreateItem(0)
     message.To = "".join(receivers)
@@ -195,10 +195,42 @@ def email_pdf(file, subject, receivers, config):
 
 
 def format_date(d):
-    if len(d) == 8:
-        date = d[:4] + d[-2:]
+
+    if '-' in d:
+        # date_1 = d[:8]
+        date = d[-8:]
+        date = date[:4] + date[-2:]
     else:
-        date = 'MISSING'
+        if len(d) == 8:
+            date = d[:4] + d[-2:]
+        else:
+            date = 'MISSING'
 
     return date
 
+
+def get_file_type(file):
+
+    with fitz.open(file) as doc:
+
+        page = doc[0]
+
+        if not page.is_wrapped:
+            page.wrap_contents()
+
+        page_0 = str(page.get_text()).upper()
+
+        if "FIRE DETECTION" in page_0:
+            return "DFHN"
+        elif "CERTIFICATE OF COMPLIANCE" in page_0:
+            return "PARTP"
+        if "ELECTRICAL INSTALLATION CONDITION" in page_0:
+            return "EICR"
+        elif "ELECTRICAL INSTALLATION CERTIFICATE" in page_0:
+            return "EIC"
+        elif "MINOR ELECTRICAL INSTALLATION" in page_0:
+            return "MW"
+        elif "DOMESTIC VISUAL CONDITION" in page_0:
+            return "VIS"
+        else:
+            return "UNKNOWN"

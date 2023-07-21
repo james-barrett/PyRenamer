@@ -1,16 +1,20 @@
 EH:
-  auto_email: 'NO'
+  auto_email: 'YES'
   delete_on_send: 'YES'
-  email_recipients: ['jamesdeanbarrett@gmail.com; jamesdeanbarrett@hotmail.com;']
+  email_recipients_EICR: ['jamesdeanbarrett@gmail.com;']
+  email_recipients_OTHER: ['jamesdeanbarrett@hotmail.com;']
 KB:
   auto_email: 'YES'
   delete_on_send: 'YES'
-  email_recipients: [ 'jamesdeanbarrett@gmail.com; jamesdeanbarrett@hotmail.com;' ]
+  email_recipients_EICR: [ 'jamesdeanbarrett@gmail.com;' ]
+  email_recipients_OTHER: ['jamesdeanbarrett@hotmail.com;']
 RR:
   auto_email: 'NO'
   delete_on_send: 'YES'
-  email_recipients: [ 'jamesdeanbarrett@gmail.com; jamesdeanbarrett@hotmail.com;' ]
+  email_recipients_EICR: [ 'jamesdeanbarrett@gmail.com;' ]
+  email_recipients_OTHER: ['jamesdeanbarrett@hotmail.com;']
 FWT:
   auto_email: 'NO'
   delete_on_send: 'NO'
-  email_recipients: [ '' ]
+  email_recipients_EICR: [ '' ]
+  email_recipients_OTHER: ['']
